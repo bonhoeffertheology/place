@@ -45,7 +45,7 @@
             <i class="fa-solid fa-shield-halved mr-1"></i>관리자 모드
           </span>
         </div>
-        <p class="text-xs md:text-sm text-slate-500">날짜를 선택하고 원하는 시간대의 빈 칸을 클릭하여 사역 장소를 신청하세요.</p>
+        <p class="text-xs md:text-sm text-slate-500">날짜를 선택하고 원하는 시간대의 빈 칸을 클릭하여 사역 장소를 신청하세요. (최대 3개월까지 신청 가능)</p>
       </div>
 
       <div class="flex items-center justify-between md:justify-end gap-2 flex-wrap">
@@ -84,11 +84,11 @@
         </span>
       </div>
       <div class="text-slate-400">
-        * 1시간 단위 (07:00 ~ 22:00) / 총 15개 공간 / 예약 가능 기간: 오늘 ~ 6개월 후
+        * 1시간 단위 (07:00 ~ 22:00) / 총 15개 공간 / 예약 가능 기간: 오늘 ~ 3개월 후
       </div>
     </div>
 
-    <!-- 타임테이블 컨테이너 -->
+    <!-- 타임테이블 그리드 컨테이너 -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
       <div class="overflow-x-auto scrollbar-thin">
         <table class="w-full border-collapse text-left">
@@ -274,11 +274,12 @@
       return `${y}-${m}-${d}`;
     };
 
+    // 오늘 및 3개월 후 제한 설정
     const todayObj = new Date();
     const minDateStr = formatDate(todayObj);
 
     const maxDateObj = new Date();
-    maxDateObj.setMonth(maxDateObj.getMonth() + 6);
+    maxDateObj.setMonth(maxDateObj.getMonth() + 3);
     const maxDateStr = formatDate(maxDateObj);
 
     let currentDate = minDateStr;
