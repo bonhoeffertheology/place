@@ -12,8 +12,8 @@
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
     }
     .scrollbar-thin::-webkit-scrollbar {
-      height: 8px;
-      width: 8px;
+      height: 6px;
+      width: 6px;
     }
     .scrollbar-thin::-webkit-scrollbar-track {
       background: #f1f5f9;
@@ -30,55 +30,57 @@
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
 
-  <div class="max-w-[1600px] mx-auto px-4 py-8">
+  <div class="max-w-[1600px] mx-auto px-3 py-5 md:px-6 md:py-8">
     <!-- 헤더 -->
-    <header class="flex flex-col md:flex-row md:items-center md:justify-between pb-6 mb-6 border-b border-slate-200 gap-4">
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between pb-5 mb-5 border-b border-slate-200 gap-4">
       <div>
         <div class="flex items-center gap-2 mb-1">
           <span class="p-2 bg-indigo-600 text-white rounded-lg text-sm shadow-sm"><i class="fa-solid fa-church"></i></span>
-          <h1 class="text-2xl font-bold tracking-tight text-slate-900">서교동교회 사역장소신청</h1>
+          <h1 class="text-xl md:text-2xl font-bold tracking-tight text-slate-900">서교동교회 사역장소신청</h1>
         </div>
-        <p class="text-sm text-slate-500">날짜를 선택하고 원하는 시간대의 빈 칸을 클릭하여 사역 장소를 신청하세요.</p>
+        <p class="text-xs md:text-sm text-slate-500">날짜를 선택하고 원하는 시간대의 빈 칸을 클릭하여 사역 장소를 신청하세요.</p>
       </div>
 
       <!-- 날짜 네비게이션 -->
-      <div class="flex items-center gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+      <div class="flex items-center justify-between md:justify-start gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
         <button id="prev-date-btn" class="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition" title="이전 날짜">
-          <i class="fa-solid fa-chevron-left"></i>
+          <i class="fa-solid fa-chevron-left text-sm"></i>
         </button>
-        <input type="date" id="current-date-input" class="font-semibold text-slate-700 bg-transparent border-0 focus:ring-0 cursor-pointer outline-none text-sm" />
+        <input type="date" id="current-date-input" class="font-semibold text-slate-700 bg-transparent border-0 focus:ring-0 cursor-pointer outline-none text-xs md:text-sm" />
         <button id="next-date-btn" class="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition" title="다음 날짜">
-          <i class="fa-solid fa-chevron-right"></i>
+          <i class="fa-solid fa-chevron-right text-sm"></i>
         </button>
-        <button id="today-btn" class="px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition ml-1">
+        <button id="today-btn" class="px-2.5 py-1 md:px-3 md:py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition ml-1">
           오늘
         </button>
       </div>
     </header>
 
     <!-- 범례 및 안내 -->
-    <div class="flex items-center justify-between mb-4 flex-wrap gap-2 text-xs font-medium text-slate-600">
-      <div class="flex items-center gap-4">
+    <div class="flex items-center justify-between mb-3 flex-wrap gap-2 text-[11px] md:text-xs font-medium text-slate-600">
+      <div class="flex items-center gap-3 md:gap-4">
         <span class="flex items-center gap-1.5">
-          <span class="w-3.5 h-3.5 rounded bg-white border border-dashed border-slate-300"></span> 예약 가능 (클릭)
+          <span class="w-3 h-3 rounded bg-white border border-dashed border-slate-300"></span> 예약 가능
         </span>
         <span class="flex items-center gap-1.5">
-          <span class="w-3.5 h-3.5 rounded bg-indigo-500 border border-indigo-600"></span> 예약 완료 (상세/취소)
+          <span class="w-3 h-3 rounded bg-indigo-500 border border-indigo-600"></span> 예약 완료
         </span>
       </div>
       <div class="text-slate-400">
-        * 1시간 단위 운영 (07:00 ~ 22:00) / 총 15개 공간
+        * 1시간 단위 (07:00 ~ 22:00) / 총 15개 공간
       </div>
     </div>
 
     <!-- 타임테이블 그리드 컨테이너 -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="overflow-x-auto scrollbar-thin">
-        <table class="w-full border-collapse text-left min-w-[1200px]">
+        <table class="w-full border-collapse text-left">
           <thead>
-            <tr class="bg-slate-100/80 border-b border-slate-200 text-xs font-semibold text-slate-600">
-              <!-- 공간 목록 너비 확장 (w-64: 256px) -->
-              <th class="p-3.5 w-64 min-w-[250px] sticky left-0 bg-slate-100 z-10 border-r border-slate-200">공간 목록</th>
+            <tr class="bg-slate-100/90 border-b border-slate-200 text-xs font-semibold text-slate-600">
+              <!-- 모바일: 120px(w-[120px]), 데스크톱: 280px(md:w-72) -->
+              <th class="p-2.5 md:p-3.5 w-[120px] md:w-72 min-w-[120px] md:min-w-[280px] sticky left-0 bg-slate-100 z-10 border-r border-slate-200 text-center md:text-left">
+                공간 목록
+              </th>
               <th id="time-header-row" class="p-0 font-normal"></th>
             </tr>
           </thead>
@@ -93,7 +95,7 @@
   <!-- 예약 신청 모달 -->
   <div id="booking-modal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden transition-all transform scale-95 opacity-0 duration-200" id="modal-content">
-      <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+      <div class="px-5 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
         <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
           <i class="fa-regular fa-calendar-check text-indigo-600"></i> 사역장소 신청
         </h3>
@@ -101,19 +103,19 @@
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <form id="booking-form" class="p-6 space-y-4 text-sm">
+      <form id="booking-form" class="p-5 md:p-6 space-y-4 text-sm">
         <div>
           <label class="block font-medium text-slate-600 mb-1">신청 정보</label>
           <div class="p-3 bg-slate-100 rounded-xl space-y-1 text-xs text-slate-700">
             <div><span class="font-semibold text-slate-500">날짜:</span> <span id="modal-date-text"></span></div>
-            <div><span class="font-semibold text-slate-500">장소:</span> <span id="modal-room-text" class="font-semibold text-indigo-900"></span></div>
+            <div><span class="font-semibold text-slate-500">장소:</span> <span id="modal-room-text" class="font-bold text-indigo-900"></span></div>
             <div><span class="font-semibold text-slate-500">시간:</span> <span id="modal-time-text"></span></div>
           </div>
         </div>
 
         <div>
           <label class="block font-medium text-slate-700 mb-1" for="group-name">소속 소그룹 / 부서명 <span class="text-rose-500">*</span></label>
-          <input type="text" id="group-name" required placeholder="예: 청년부 찬양팀, 3교구 2구역, 남선교회" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
+          <input type="text" id="group-name" required placeholder="예: 청년부 찬양팀, 3교구 2구역" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
         </div>
 
         <div>
@@ -136,7 +138,7 @@
 
   <!-- 예약 상세/삭제 모달 -->
   <div id="detail-modal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden p-6 space-y-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden p-5 md:p-6 space-y-4">
       <div class="flex items-center justify-between border-b pb-3 border-slate-100">
         <h3 class="font-bold text-slate-800">장소 사용 상세 정보</h3>
         <button id="close-detail-btn" class="text-slate-400 hover:text-slate-600 text-lg">
@@ -155,27 +157,27 @@
   </div>
 
   <script>
-    // 1. 15개 공간 목록 구성 (실제 교회 환경에 맞춰 수정 가능)
+    // 1. 15개 공간 목록
     const ROOMS = [
-      { id: 'room_01', name: '본당 대예배실', location: '본관 2-3층', capacity: '500명' },
-      { id: 'room_02', name: '비전홀 (소예배실)', location: '본관 지하 1층', capacity: '150명' },
-      { id: 'room_03', name: '글로리아홀 (중예배실)', location: '교육관 2층', capacity: '100명' },
-      { id: 'room_04', name: '청년부실', location: '교육관 3층', capacity: '70명' },
-      { id: 'room_05', name: '중고등부실', location: '교육관 4층', capacity: '50명' },
-      { id: 'room_06', name: '유초등부실', location: '교육관 1층', capacity: '40명' },
-      { id: 'room_07', name: '유치부실 / 영아부실', location: '본관 1층', capacity: '30명' },
-      { id: 'room_08', name: '제1세미나실 (101호)', location: '본관 1층', capacity: '25명' },
-      { id: 'room_09', name: '제2세미나실 (102호)', location: '본관 1층', capacity: '20명' },
-      { id: 'room_10', name: '소그룹실 A (201호)', location: '교육관 2층', capacity: '12명' },
-      { id: 'room_11', name: '소그룹실 B (202호)', location: '교육관 2층', capacity: '12명' },
-      { id: 'room_12', name: '소그룹실 C (203호)', location: '교육관 2층', capacity: '10명' },
-      { id: 'room_13', name: '찬양대 연습실', location: '본관 지하 1층', capacity: '60명' },
-      { id: 'room_14', name: '찬양팀 합주실', location: '교육관 지하 1층', capacity: '15명' },
-      { id: 'room_15', name: '친교실 및 카페', location: '본관 1층 로비', capacity: '80명' }
+      { id: 'room_01', name: '본당 대예배실', shortName: '본당', location: '본관 2-3층', capacity: '500명' },
+      { id: 'room_02', name: '비전홀 (소예배실)', shortName: '비전홀', location: '본관 B1층', capacity: '150명' },
+      { id: 'room_03', name: '글로리아홀', shortName: '글로리아', location: '교육관 2층', capacity: '100명' },
+      { id: 'room_04', name: '청년부실', shortName: '청년부실', location: '교육관 3층', capacity: '70명' },
+      { id: 'room_05', name: '중고등부실', shortName: '중고등부', location: '교육관 4층', capacity: '50명' },
+      { id: 'room_06', name: '유초등부실', shortName: '유초등부', location: '교육관 1층', capacity: '40명' },
+      { id: 'room_07', name: '유치·영아부실', shortName: '유치부실', location: '본관 1층', capacity: '30명' },
+      { id: 'room_08', name: '제1세미나실 (101호)', shortName: '101호', location: '본관 1층', capacity: '25명' },
+      { id: 'room_09', name: '제2세미나실 (102호)', shortName: '102호', location: '본관 1층', capacity: '20명' },
+      { id: 'room_10', name: '소그룹실 A (201호)', shortName: '201호(A)', location: '교육관 2층', capacity: '12명' },
+      { id: 'room_11', name: '소그룹실 B (202호)', shortName: '202호(B)', location: '교육관 2층', capacity: '12명' },
+      { id: 'room_12', name: '소그룹실 C (203호)', shortName: '203호(C)', location: '교육관 2층', capacity: '10명' },
+      { id: 'room_13', name: '찬양대 연습실', shortName: '찬양대실', location: '본관 B1층', capacity: '60명' },
+      { id: 'room_14', name: '찬양팀 합주실', shortName: '합주실', location: '교육관 B1층', capacity: '15명' },
+      { id: 'room_15', name: '친교실 / 카페', shortName: '카페테리아', location: '본관 1층', capacity: '80명' }
     ];
 
     const START_HOUR = 7;
-    const END_HOUR = 22; // 07:00 ~ 22:00
+    const END_HOUR = 22;
 
     let currentDate = new Date().toISOString().split('T')[0];
     let selectedSlot = null;
@@ -215,7 +217,7 @@
       for (let h = START_HOUR; h < END_HOUR; h++) {
         const timeLabel = `${String(h).padStart(2, '0')}:00`;
         headersHtml += `
-          <div class="w-24 flex-shrink-0 text-center py-3 border-r border-slate-200 text-[11px] font-semibold text-slate-500">
+          <div class="w-20 md:w-24 flex-shrink-0 text-center py-2.5 md:py-3 border-r border-slate-200 text-[10px] md:text-[11px] font-semibold text-slate-500">
             ${timeLabel}
           </div>`;
       }
@@ -232,14 +234,20 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50/60 transition';
 
-        // 좌측 공간명 컬럼 (넓어진 너비와 위치 정보 추가)
+        // 반응형 공간 컬럼: 모바일은 간결하게, PC는 넓고 상세하게
         let rowHtml = `
-          <td class="p-3.5 sticky left-0 bg-white z-10 border-r border-slate-200 shadow-[2px_0_6px_rgba(0,0,0,0.02)]">
-            <div class="font-bold text-slate-800 truncate text-[13px]">${room.name}</div>
-            <div class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5 truncate">
-              <span>${room.location}</span>
-              <span class="text-slate-300">|</span>
-              <span>수용: ${room.capacity}</span>
+          <td class="p-2 md:p-3.5 sticky left-0 bg-white z-10 border-r border-slate-200 shadow-[2px_0_6px_rgba(0,0,0,0.02)] w-[120px] md:w-72">
+            <div class="font-bold text-slate-800 text-[12px] md:text-[13px] truncate" title="${room.name}">
+              <span class="md:hidden">${room.shortName}</span>
+              <span class="hidden md:inline">${room.name}</span>
+            </div>
+            <div class="text-[10px] md:text-[11px] text-slate-400 mt-0.5 truncate">
+              <span class="md:hidden">${room.location}</span>
+              <div class="hidden md:flex items-center gap-1.5">
+                <span>${room.location}</span>
+                <span class="text-slate-300">|</span>
+                <span>수용: ${room.capacity}</span>
+              </div>
             </div>
           </td>
           <td class="p-0">
@@ -252,18 +260,18 @@
 
           if (res) {
             rowHtml += `
-              <div class="w-24 h-16 flex-shrink-0 p-1 border-r border-slate-100">
-                <button onclick="openDetailModal('${res.id}')" class="w-full h-full bg-indigo-50/90 border border-indigo-200 rounded-xl p-1.5 flex flex-col justify-between text-left hover:bg-indigo-100 hover:border-indigo-300 transition shadow-xs">
-                  <span class="text-[11px] font-bold text-indigo-950 truncate leading-tight">${res.groupName}</span>
-                  <span class="text-[10px] font-medium text-indigo-600 truncate">${res.applicantName}</span>
+              <div class="w-20 md:w-24 h-14 md:h-16 flex-shrink-0 p-1 border-r border-slate-100">
+                <button onclick="openDetailModal('${res.id}')" class="w-full h-full bg-indigo-50/90 border border-indigo-200 rounded-lg md:rounded-xl p-1 md:p-1.5 flex flex-col justify-between text-left hover:bg-indigo-100 hover:border-indigo-300 transition shadow-xs">
+                  <span class="text-[10px] md:text-[11px] font-bold text-indigo-950 truncate leading-tight">${res.groupName}</span>
+                  <span class="text-[9px] md:text-[10px] font-medium text-indigo-600 truncate">${res.applicantName}</span>
                 </button>
               </div>
             `;
           } else {
             rowHtml += `
-              <div class="w-24 h-16 flex-shrink-0 p-1 border-r border-slate-100">
-                <button onclick="openBookingModal('${room.id}', '${room.name}', ${h})" class="w-full h-full border border-dashed border-slate-200 rounded-xl flex items-center justify-center text-slate-300 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50/40 transition group">
-                  <i class="fa-solid fa-plus text-xs group-hover:scale-125 transition-transform"></i>
+              <div class="w-20 md:w-24 h-14 md:h-16 flex-shrink-0 p-1 border-r border-slate-100">
+                <button onclick="openBookingModal('${room.id}', '${room.name}', ${h})" class="w-full h-full border border-dashed border-slate-200 rounded-lg md:rounded-xl flex items-center justify-center text-slate-300 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50/40 transition group">
+                  <i class="fa-solid fa-plus text-[10px] md:text-xs group-hover:scale-125 transition-transform"></i>
                 </button>
               </div>
             `;
@@ -308,7 +316,7 @@
       const room = ROOMS.find(r => r.id === res.roomId);
 
       detailContent.innerHTML = `
-        <div class="p-3.5 bg-slate-50 rounded-xl space-y-1.5 text-xs">
+        <div class="p-3 bg-slate-50 rounded-xl space-y-1.5 text-xs">
           <div><span class="font-semibold text-slate-500">장소:</span> <span class="font-bold text-slate-800">${room?.name}</span></div>
           <div><span class="font-semibold text-slate-500">일시:</span> ${res.date} (${String(res.hour).padStart(2, '0')}:00 ~ ${String(res.hour + 1).padStart(2, '0')}:00)</div>
           <div><span class="font-semibold text-slate-500">소속:</span> ${res.groupName}</div>
@@ -390,7 +398,7 @@
       }
     });
 
-    // 시작
+    // 실행
     renderHeader();
     renderSchedule();
   </script>
