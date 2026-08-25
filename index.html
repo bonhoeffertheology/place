@@ -42,16 +42,16 @@
           <span class="p-2 bg-indigo-600 text-white rounded-lg text-sm shadow-sm"><i class="fa-solid fa-church"></i></span>
           <h1 class="text-xl md:text-2xl font-bold tracking-tight text-slate-900">서교동교회 사역장소신청</h1>
         </div>
-        <p class="text-xs md:text-sm text-slate-500">날짜를 선택하고 원하는 시간대의 빈 칸을 클릭하여 사역 장소를 신청하세요.</p>
+        <p class="text-xs md:text-sm text-slate-500">날짜를 선택하고 원하는 시간대의 빈 칸을 클릭하여 사역 장소를 신청하세요. (최대 6개월까지 신청 가능)</p>
       </div>
 
       <!-- 날짜 네비게이션 -->
       <div class="flex items-center justify-between md:justify-start gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
-        <button id="prev-date-btn" class="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition" title="이전 날짜">
+        <button id="prev-date-btn" class="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed" title="이전 날짜">
           <i class="fa-solid fa-chevron-left text-sm"></i>
         </button>
         <input type="date" id="current-date-input" class="font-semibold text-slate-700 bg-transparent border-0 focus:ring-0 cursor-pointer outline-none text-xs md:text-sm" />
-        <button id="next-date-btn" class="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition" title="다음 날짜">
+        <button id="next-date-btn" class="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed" title="다음 날짜">
           <i class="fa-solid fa-chevron-right text-sm"></i>
         </button>
         <button id="today-btn" class="px-2.5 py-1 md:px-3 md:py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition ml-1">
@@ -71,11 +71,11 @@
         </span>
       </div>
       <div class="text-slate-400">
-        * 1시간 단위 (07:00 ~ 22:00) / 총 15개 공간
+        * 1시간 단위 (07:00 ~ 22:00) / 총 15개 공간 / 예약 가능 기간: 오늘 ~ 6개월 후
       </div>
     </div>
 
-    <!-- 타임테이블 그리드 컨테이너 -->
+    <!-- 타임테이블 컨테이너 -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="overflow-x-auto scrollbar-thin">
         <table class="w-full border-collapse text-left">
@@ -88,7 +88,7 @@
             </tr>
           </thead>
           <tbody id="schedule-body" class="divide-y divide-slate-100 text-sm">
-            <!-- 자바스크립트로 15개 공간 렌더링 -->
+            <!-- 렌더링 영역 -->
           </tbody>
         </table>
       </div>
@@ -168,7 +168,7 @@
   </div>
 
   <script>
-    // 사용자 실제 Firebase 설정값 적용
+    // Firebase 설정
     const firebaseConfig = {
       apiKey: "AIzaSyC2IJuF-o9TjlToGimzjPTAlXMQ_gUuQ3U",
       authDomain: "place-80b5e.firebaseapp.com",
@@ -205,18 +205,38 @@
     const START_HOUR = 7;
     const END_HOUR = 22;
 
-    let currentDate = new Date().toISOString().split('T')[0];
+    // 날짜 포맷 함수 (YYYY-MM-DD)
+    const formatDate = (date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
+
+    // 오늘 및 6개월 후 제한 계산
+    const todayObj = new Date();
+    const minDateStr = formatDate(todayObj);
+
+    const maxDateObj = new Date();
+    maxDateObj.setMonth(maxDateObj.getMonth() + 6);
+    const maxDateStr = formatDate(maxDateObj);
+
+    let currentDate = minDateStr;
     let selectedSlot = null;
     let selectedReservation = null;
     let reservations = [];
 
-    // DOM
+    // DOM 요소
     const dateInput = document.getElementById('current-date-input');
     const prevDateBtn = document.getElementById('prev-date-btn');
     const nextDateBtn = document.getElementById('next-date-btn');
     const todayBtn = document.getElementById('today-btn');
     const scheduleBody = document.getElementById('schedule-body');
     const timeHeaderRow = document.getElementById('time-header-row');
+
+    // 달력 min / max 속성 부여
+    dateInput.min = minDateStr;
+    dateInput.max = maxDateStr;
 
     const bookingModal = document.getElementById('booking-modal');
     const closeModalBtn = document.getElementById('close-modal-btn');
@@ -244,9 +264,16 @@
       timeHeaderRow.innerHTML = headersHtml;
     };
 
+    // 네비게이션 버튼 상태 갱신
+    const updateNavButtons = () => {
+      prevDateBtn.disabled = (currentDate <= minDateStr);
+      nextDateBtn.disabled = (currentDate >= maxDateStr);
+    };
+
     // 타임테이블 렌더링
     const renderSchedule = () => {
       dateInput.value = currentDate;
+      updateNavButtons();
       scheduleBody.innerHTML = '';
 
       ROOMS.forEach(room => {
@@ -357,28 +384,37 @@
       selectedReservation = null;
     };
 
-    // 이벤트 리스너
+    // 이벤트 리스너 (날짜 범위 검증 포함)
     dateInput.addEventListener('change', (e) => {
-      currentDate = e.target.value;
+      let val = e.target.value;
+      if (val < minDateStr) val = minDateStr;
+      if (val > maxDateStr) val = maxDateStr;
+      currentDate = val;
       renderSchedule();
     });
 
     prevDateBtn.addEventListener('click', () => {
       const d = new Date(currentDate);
       d.setDate(d.getDate() - 1);
-      currentDate = d.toISOString().split('T')[0];
-      renderSchedule();
+      const newDateStr = formatDate(d);
+      if (newDateStr >= minDateStr) {
+        currentDate = newDateStr;
+        renderSchedule();
+      }
     });
 
     nextDateBtn.addEventListener('click', () => {
       const d = new Date(currentDate);
       d.setDate(d.getDate() + 1);
-      currentDate = d.toISOString().split('T')[0];
-      renderSchedule();
+      const newDateStr = formatDate(d);
+      if (newDateStr <= maxDateStr) {
+        currentDate = newDateStr;
+        renderSchedule();
+      }
     });
 
     todayBtn.addEventListener('click', () => {
-      currentDate = new Date().toISOString().split('T')[0];
+      currentDate = minDateStr;
       renderSchedule();
     });
 
@@ -386,7 +422,7 @@
     cancelBookingBtn.addEventListener('click', closeBookingModal);
     closeDetailBtn.addEventListener('click', closeDetailModal);
 
-    // 예약 등록 (Firebase Firestore 저장)
+    // 예약 등록
     bookingForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!selectedSlot) return;
@@ -444,7 +480,7 @@
       }
     });
 
-    // 시작
+    // 초기 렌더링
     renderHeader();
     renderSchedule();
   </script>
