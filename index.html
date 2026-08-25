@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>교회 공간 예약 시스템</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- 헤더 -->
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between pb-6 mb-6 border-b border-slate-200 gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="p-2 bg-indigo-600 text-white rounded-lg text-sm"><i class="fa-solid fa-church"></i></span>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900">교회 공간 대여 및 예약 현황</h1>
+        </div>
+        <p class="text-sm text-slate-500">날짜를 선택하고 원하는 시간대의 빈 칸을 클릭하여 예약을 신청하세요.</p>
+      </div>
+
+      <!-- 날짜 네비게이션 -->
+      <div class="flex items-center gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+        <button id="prev-date-btn" class="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <input type="date" id="current-date-input" class="font-medium text-slate-700 bg-transparent border-0 focus:ring-0 cursor-pointer outline-none text-sm" />
+        <button id="next-date-btn" class="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        <button id="today-btn" class="px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition ml-1">
+          오늘
+        </button>
+      </div>
+    </header>
+
+    <!-- 범례 및 안내 -->
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2 text-xs font-medium text-slate-600">
+      <div class="flex items-center gap-4">
+        <span class="flex items-center gap-1.5">
+          <span class="w-3 h-3 rounded bg-white border border-dashed border-slate-300"></span> 예약 가능 (클릭)
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="w-3 h-3 rounded bg-indigo-500 border border-indigo-600"></span> 예약 완료
+        </span>
+      </div>
+      <div class="text-slate-400">
+        * 1시간 단위 운영 (07:00 ~ 22:00)
+      </div>
+    </div>
+
+    <!-- 타임테이블 그리드 컨테이너 -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto scrollbar-thin">
+        <table class="w-full border-collapse text-left min-w-[1000px]">
+          <thead>
+            <tr class="bg-slate-100/70 border-b border-slate-200 text-xs font-semibold text-slate-600">
+              <th class="p-3.5 w-44 sticky left-0 bg-slate-100/90 backdrop-blur z-10 border-r border-slate-200">공간 목록</th>
+              <!-- 시간대 헤더 렌더링 영역 -->
+              <th id="time-header-row" class="p-0 font-normal"></th>
+            </tr>
+          </thead>
+          <tbody id="schedule-body" class="divide-y divide-slate-100 text-sm">
+            <!-- 자바스크립트로 렌더링 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 예약 신청 모달 -->
+  <div id="booking-modal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden transition-all transform scale-95 opacity-0 duration-200" id="modal-content">
+      <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+          <i class="fa-regular fa-calendar-check text-indigo-600"></i> 공간 사용 신청
+        </h3>
+        <button id="close-modal-btn" class="text-slate-400 hover:text-slate-600 text-lg transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="booking-form" class="p-6 space-y-4 text-sm">
+        <div>
+          <label class="block font-medium text-slate-600 mb-1">예약 정보</label>
+          <div class="p-3 bg-slate-100 rounded-xl space-y-1 text-xs text-slate-700">
+            <div><span class="font-semibold text-slate-500">날짜:</span> <span id="modal-date-text"></span></div>
+            <div><span class="font-semibold text-slate-500">공간:</span> <span id="modal-room-text"></span></div>
+            <div><span class="font-semibold text-slate-500">시간:</span> <span id="modal-time-text"></span></div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-medium text-slate-700 mb-1" for="group-name">소속 소그룹 / 부서명 <span class="text-rose-500">*</span></label>
+          <input type="text" id="group-name" required placeholder="예: 청년부 찬양팀, 3교구 2구역" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
+        </div>
+
+        <div>
+          <label class="block font-medium text-slate-700 mb-1" for="applicant-name">신청자 이름 <span class="text-rose-500">*</span></label>
+          <input type="text" id="applicant-name" required placeholder="예: 홍길동" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
+        </div>
+
+        <div>
+          <label class="block font-medium text-slate-700 mb-1" for="contact-info">연락처 / 특이사항 (선택)</label>
+          <input type="text" id="contact-info" placeholder="예: 010-1234-5678 / 빔프로젝터 사용" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" id="cancel-booking-btn" class="flex-1 px-4 py-2.5 rounded-xl font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition">취소</button>
+          <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition shadow-sm">예약 등록</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 예약 상세/삭제 모달 -->
+  <div id="detail-modal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden p-6 space-y-4">
+      <div class="flex items-center justify-between border-b pb-3 border-slate-100">
+        <h3 class="font-bold text-slate-800">예약 상세 정보</h3>
+        <button id="close-detail-btn" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="detail-content" class="space-y-2 text-sm text-slate-600">
+        <!-- 자바스크립트로 주입 -->
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button id="delete-reservation-btn" class="w-full px-4 py-2.5 rounded-xl font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 transition">
+          예약 취소(삭제)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. 초기 데이터 및 설정
+    const ROOMS = [
+      { id: 'main', name: '본당 대예배실', capacity: '500명' },
+      { id: 'vision', name: '비전홀 (소예배실)', capacity: '120명' },
+      { id: 'youth', name: '청년부실 (3층)', capacity: '60명' },
+      { id: 'room101', name: '101호 세미나실', capacity: '30명' },
+      { id: 'room102', name: '102호 소그룹실', capacity: '12명' },
+      { id: 'room103', name: '103호 찬양연습실', capacity: '20명' },
+      { id: 'cafe', name: '친교실 / 카페테리아', capacity: '80명' }
+    ];
+
+    const START_HOUR = 7;
+    const END_HOUR = 22; // 22시(21:00~22:00 마지막 슬롯)
+
+    let currentDate = new Date().toISOString().split('T')[0];
+    let selectedSlot = null; // { roomId, hour, date }
+    let selectedReservationId = null;
+
+    // 로컬 스토리지 데이터 로드
+    const getReservations = () => {
+      const data = localStorage.getItem('church_room_reservations');
+      return data ? JSON.parse(data) : [];
+    };
+
+    const saveReservations = (list) => {
+      localStorage.setItem('church_room_reservations', JSON.stringify(list));
+    };
+
+    // 2. DOM 요소
+    const dateInput = document.getElementById('current-date-input');
+    const prevDateBtn = document.getElementById('prev-date-btn');
+    const nextDateBtn = document.getElementById('next-date-btn');
+    const todayBtn = document.getElementById('today-btn');
+    const scheduleBody = document.getElementById('schedule-body');
+    const timeHeaderRow = document.getElementById('time-header-row');
+
+    // 모달 DOM
+    const bookingModal = document.getElementById('booking-modal');
+    const modalContent = document.getElementById('modal-content');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const cancelBookingBtn = document.getElementById('cancel-booking-btn');
+    const bookingForm = document.getElementById('booking-form');
+
+    const detailModal = document.getElementById('detail-modal');
+    const closeDetailBtn = document.getElementById('close-detail-btn');
+    const detailContent = document.getElementById('detail-content');
+    const deleteReservationBtn = document.getElementById('delete-reservation-btn');
+
+    // 3. 렌더링 함수
+    const renderHeader = () => {
+      let headersHtml = '<div class="flex">';
+      for (let h = START_HOUR; h < END_HOUR; h++) {
+        const timeLabel = `${String(h).padStart(2, '0')}:00`;
+        headersHtml += `
+          <div class="w-24 flex-shrink-0 text-center py-3 border-r border-slate-200 text-[11px] font-semibold text-slate-500">
+            ${timeLabel}
+          </div>`;
+      }
+      headersHtml += '</div>';
+      timeHeaderRow.innerHTML = headersHtml;
+    };
+
+    const renderSchedule = () => {
+      const reservations = getReservations();
+      dateInput.value = currentDate;
+
+      scheduleBody.innerHTML = '';
+
+      ROOMS.forEach(room => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/50 transition';
+
+        // 공간 컬럼
+        let rowHtml = `
+          <td class="p-3.5 sticky left-0 bg-white z-10 border-r border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+            <div class="font-semibold text-slate-800">${room.name}</div>
+            <div class="text-[11px] text-slate-400">수용 인원: ${room.capacity}</div>
+          </td>
+          <td class="p-0">
+            <div class="flex">
+        `;
+
+        // 시간별 슬롯
+        for (let h = START_HOUR; h < END_HOUR; h++) {
+          const timeSlotStr = `${String(h).padStart(2, '0')}:00`;
+          const res = reservations.find(r => r.date === currentDate && r.roomId === room.id && r.hour === h);
+
+          if (res) {
+            rowHtml += `
+              <div class="w-24 h-16 flex-shrink-0 p-1 border-r border-slate-100">
+                <button onclick="openDetailModal('${res.id}')" class="w-full h-full bg-indigo-50 border border-indigo-200 rounded-xl p-1.5 flex flex-col justify-between text-left hover:bg-indigo-100 transition">
+                  <span class="text-[11px] font-bold text-indigo-900 truncate leading-tight">${res.groupName}</span>
+                  <span class="text-[10px] text-indigo-600 truncate">${res.applicantName}</span>
+                </button>
+              </div>
+            `;
+          } else {
+            rowHtml += `
+              <div class="w-24 h-16 flex-shrink-0 p-1 border-r border-slate-100">
+                <button onclick="openBookingModal('${room.id}', '${room.name}', ${h})" class="w-full h-full border border-dashed border-slate-200 rounded-xl flex items-center justify-center text-slate-300 hover:text-indigo-500 hover:border-indigo-300 hover:bg-indigo-50/30 transition group">
+                  <i class="fa-solid fa-plus text-xs group-hover:scale-125 transition-transform"></i>
+                </button>
+              </div>
+            `;
+          }
+        }
+
+        rowHtml += `
+            </div>
+          </td>
+        `;
+        tr.innerHTML = rowHtml;
+        scheduleBody.appendChild(tr);
+      });
+    };
+
+    // 4. 모달 인터랙션
+    window.openBookingModal = (roomId, roomName, hour) => {
+      selectedSlot = { roomId, hour, date: currentDate };
+      document.getElementById('modal-date-text').textContent = currentDate;
+      document.getElementById('modal-room-text').textContent = roomName;
+      document.getElementById('modal-time-text').textContent = `${String(hour).padStart(2, '0')}:00 ~ ${String(hour + 1).padStart(2, '0')}:00`;
+
+      bookingForm.reset();
+      bookingModal.classList.remove('hidden');
+      setTimeout(() => {
+        modalContent.classList.remove('scale-95', 'opacity-0');
+      }, 10);
+    };
+
+    const closeBookingModal = () => {
+      modalContent.classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        bookingModal.classList.add('hidden');
+        selectedSlot = null;
+      }, 200);
+    };
+
+    window.openDetailModal = (resId) => {
+      const res = getReservations().find(r => r.id === resId);
+      if (!res) return;
+      selectedReservationId = resId;
+      const room = ROOMS.find(r => r.id === res.roomId);
+
+      detailContent.innerHTML = `
+        <div class="p-3 bg-slate-50 rounded-xl space-y-1.5 text-xs">
+          <div><span class="font-semibold text-slate-500">장소:</span> <span class="font-bold text-slate-800">${room?.name}</span></div>
+          <div><span class="font-semibold text-slate-500">일시:</span> ${res.date} (${String(res.hour).padStart(2, '0')}:00 ~ ${String(res.hour + 1).padStart(2, '0')}:00)</div>
+          <div><span class="font-semibold text-slate-500">소속:</span> ${res.groupName}</div>
+          <div><span class="font-semibold text-slate-500">신청자:</span> ${res.applicantName}</div>
+          ${res.contact ? `<div><span class="font-semibold text-slate-500">비고:</span> ${res.contact}</div>` : ''}
+        </div>
+      `;
+      detailModal.classList.remove('hidden');
+    };
+
+    const closeDetailModal = () => {
+      detailModal.classList.add('hidden');
+      selectedReservationId = null;
+    };
+
+    // 5. 이벤트 리스너
+    dateInput.addEventListener('change', (e) => {
+      currentDate = e.target.value;
+      renderSchedule();
+    });
+
+    prevDateBtn.addEventListener('click', () => {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() - 1);
+      currentDate = d.toISOString().split('T')[0];
+      renderSchedule();
+    });
+
+    nextDateBtn.addEventListener('click', () => {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() + 1);
+      currentDate = d.toISOString().split('T')[0];
+      renderSchedule();
+    });
+
+    todayBtn.addEventListener('click', () => {
+      currentDate = new Date().toISOString().split('T')[0];
+      renderSchedule();
+    });
+
+    closeModalBtn.addEventListener('click', closeBookingModal);
+    cancelBookingBtn.addEventListener('click', closeBookingModal);
+    closeDetailBtn.addEventListener('click', closeDetailModal);
+
+    bookingForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!selectedSlot) return;
+
+      const groupName = document.getElementById('group-name').value.trim();
+      const applicantName = document.getElementById('applicant-name').value.trim();
+      const contact = document.getElementById('contact-info').value.trim();
+
+      const newReservation = {
+        id: 'res_' + Date.now(),
+        date: selectedSlot.date,
+        roomId: selectedSlot.roomId,
+        hour: selectedSlot.hour,
+        groupName,
+        applicantName,
+        contact
+      };
+
+      const reservations = getReservations();
+      reservations.push(newReservation);
+      saveReservations(reservations);
+
+      closeBookingModal();
+      renderSchedule();
+    });
+
+    deleteReservationBtn.addEventListener('click', () => {
+      if (!selectedReservationId) return;
+      if (confirm('이 공간 예약을 취소하시겠습니까?')) {
+        let reservations = getReservations();
+        reservations = reservations.filter(r => r.id !== selectedReservationId);
+        saveReservations(reservations);
+        closeDetailModal();
+        renderSchedule();
+      }
+    });
+
+    // 초기 실행
+    renderHeader();
+    renderSchedule();
+  </script>
+</body>
+</html>
