@@ -75,7 +75,7 @@
       </div>
     </div>
 
-    <!-- 타임테이블 컨테이너 -->
+    <!-- 타임테이블 그리드 컨테이너 -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="overflow-x-auto scrollbar-thin">
         <table class="w-full border-collapse text-left">
@@ -88,7 +88,7 @@
             </tr>
           </thead>
           <tbody id="schedule-body" class="divide-y divide-slate-100 text-sm">
-            <!-- 렌더링 영역 -->
+            <!-- 자바스크립트로 15개 공간 렌더링 -->
           </tbody>
         </table>
       </div>
@@ -168,10 +168,15 @@
   </div>
 
   <script>
-    // Firebase 설정
+    // 사용자 실제 Firebase 설정값 적용
     const firebaseConfig = {
-      projectId: "place-ce86a",
-      // Firestore는 projectId만으로도 클라이언트 연동이 작동합니다.
+      apiKey: "AIzaSyC2IJuF-o9TjlToGimzjPTAlXMQ_gUuQ3U",
+      authDomain: "place-80b5e.firebaseapp.com",
+      projectId: "place-80b5e",
+      storageBucket: "place-80b5e.firebasestorage.app",
+      messagingSenderId: "1064681274530",
+      appId: "1:1064681274530:web:82abefd328f42635c9abfb",
+      measurementId: "G-NW88H18HCX"
     };
 
     if (!firebase.apps.length) {
@@ -239,7 +244,7 @@
       timeHeaderRow.innerHTML = headersHtml;
     };
 
-    // 시간표 렌더링
+    // 타임테이블 렌더링
     const renderSchedule = () => {
       dateInput.value = currentDate;
       scheduleBody.innerHTML = '';
@@ -310,7 +315,7 @@
       console.error("실시간 동기화 오류:", error);
     });
 
-    // 모달 제어
+    // 모달 인터랙션
     window.openBookingModal = (roomId, roomName, hour) => {
       selectedSlot = { roomId, hour, date: currentDate };
       document.getElementById('modal-date-text').textContent = currentDate;
@@ -352,7 +357,7 @@
       selectedReservation = null;
     };
 
-    // 날짜 변경 이벤트
+    // 이벤트 리스너
     dateInput.addEventListener('change', (e) => {
       currentDate = e.target.value;
       renderSchedule();
@@ -381,7 +386,7 @@
     cancelBookingBtn.addEventListener('click', closeBookingModal);
     closeDetailBtn.addEventListener('click', closeDetailModal);
 
-    // 예약 신청
+    // 예약 등록 (Firebase Firestore 저장)
     bookingForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!selectedSlot) return;
@@ -414,7 +419,7 @@
       }
     });
 
-    // 예약 삭제
+    // 예약 취소/삭제
     deleteReservationBtn.addEventListener('click', async () => {
       if (!selectedReservation) return;
 
@@ -439,7 +444,7 @@
       }
     });
 
-    // 초기화 실행
+    // 시작
     renderHeader();
     renderSchedule();
   </script>
