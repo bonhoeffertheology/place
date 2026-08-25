@@ -6,11 +6,6 @@
   <title>서교동교회 사역장소신청</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
     body {
@@ -32,6 +27,10 @@
       background: #94a3b8;
     }
   </style>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
 
@@ -61,26 +60,22 @@
       </div>
     </header>
 
-    <!-- 범례 및 상태 안내 -->
+    <!-- 범례 및 안내 -->
     <div class="flex items-center justify-between mb-3 flex-wrap gap-2 text-[11px] md:text-xs font-medium text-slate-600">
       <div class="flex items-center gap-3 md:gap-4">
         <span class="flex items-center gap-1.5">
-          <span class="w-3 h-3 rounded bg-white border border-dashed border-slate-300"></span> 예약 가능 (클릭)
+          <span class="w-3 h-3 rounded bg-white border border-dashed border-slate-300"></span> 예약 가능
         </span>
         <span class="flex items-center gap-1.5">
-          <span class="w-3 h-3 rounded bg-indigo-500 border border-indigo-600"></span> 예약 완료 (클릭 시 상세/취소)
+          <span class="w-3 h-3 rounded bg-indigo-500 border border-indigo-600"></span> 예약 완료
         </span>
       </div>
-      <div class="flex items-center gap-2 text-slate-400">
-        <span id="sync-status" class="inline-flex items-center gap-1 text-emerald-600 font-medium">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 실시간 동기화 중
-        </span>
-        <span>|</span>
-        <span>1시간 단위 (07:00 ~ 22:00)</span>
+      <div class="text-slate-400">
+        * 1시간 단위 (07:00 ~ 22:00) / 총 15개 공간
       </div>
     </div>
 
-    <!-- 타임테이블 그리드 -->
+    <!-- 타임테이블 컨테이너 -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="overflow-x-auto scrollbar-thin">
         <table class="w-full border-collapse text-left">
@@ -93,16 +88,16 @@
             </tr>
           </thead>
           <tbody id="schedule-body" class="divide-y divide-slate-100 text-sm">
-            <!-- 자바스크립트로 15개 공간 렌더링 -->
+            <!-- 렌더링 영역 -->
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- 1. 예약 신청 모달 (비밀번호 입력 포함) -->
+  <!-- 예약 신청 모달 -->
   <div id="booking-modal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden transition-all transform scale-95 opacity-0 duration-200" id="modal-content">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden" id="modal-content">
       <div class="px-5 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
         <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
           <i class="fa-regular fa-calendar-check text-indigo-600"></i> 사역장소 신청
@@ -111,7 +106,7 @@
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <form id="booking-form" class="p-5 md:p-6 space-y-3.5 text-sm">
+      <form id="booking-form" class="p-5 md:p-6 space-y-4 text-sm">
         <div>
           <label class="block font-medium text-slate-600 mb-1">신청 정보</label>
           <div class="p-3 bg-slate-100 rounded-xl space-y-1 text-xs text-slate-700">
@@ -131,12 +126,9 @@
           <input type="text" id="applicant-name" required placeholder="예: 홍길동" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
         </div>
 
-        <!-- 예약 취소용 비밀번호 필드 -->
         <div>
-          <label class="block font-medium text-slate-700 mb-1" for="password">
-            예약 취소 비밀번호 (4자리) <span class="text-rose-500">*</span>
-          </label>
-          <input type="password" id="password" required maxlength="8" placeholder="취소 시 사용할 비밀번호 (예: 숫자 4자리)" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
+          <label class="block font-medium text-slate-700 mb-1" for="password">예약 취소 비밀번호 (4자리) <span class="text-rose-500">*</span></label>
+          <input type="password" id="password" required maxlength="4" placeholder="예: 1234" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition" />
           <p class="text-[11px] text-slate-400 mt-1">* 나중에 예약을 취소할 때 본인 확인용으로 사용됩니다.</p>
         </div>
 
@@ -147,7 +139,7 @@
 
         <div class="flex gap-2 pt-2">
           <button type="button" id="cancel-booking-btn" class="flex-1 px-4 py-2.5 rounded-xl font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition">취소</button>
-          <button type="submit" id="submit-booking-btn" class="flex-1 px-4 py-2.5 rounded-xl font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition shadow-sm">
+          <button type="submit" id="submit-btn" class="flex-1 px-4 py-2.5 rounded-xl font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition shadow-sm">
             신청 등록
           </button>
         </div>
@@ -155,7 +147,7 @@
     </div>
   </div>
 
-  <!-- 2. 예약 상세 및 취소 모달 (비밀번호 확인 포함) -->
+  <!-- 예약 상세/삭제 모달 -->
   <div id="detail-modal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden p-5 md:p-6 space-y-4">
       <div class="flex items-center justify-between border-b pb-3 border-slate-100">
@@ -164,16 +156,11 @@
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      
-      <div id="detail-content" class="space-y-2 text-sm text-slate-600">
-        <!-- 자바스크립트 주입 -->
-      </div>
+      <div id="detail-content" class="space-y-2 text-sm text-slate-600"></div>
 
-      <!-- 삭제용 비밀번호 입력란 -->
-      <div class="pt-2 border-t border-slate-100">
-        <label class="block text-xs font-semibold text-slate-700 mb-1" for="delete-password">신청 시 등록한 비밀번호</label>
-        <input type="password" id="delete-password" placeholder="비밀번호 입력" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition mb-2" />
-        <button id="delete-reservation-btn" class="w-full px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 transition shadow-xs">
+      <div class="pt-2 space-y-2">
+        <input type="password" id="delete-password" maxlength="4" placeholder="등록 시 입력한 비밀번호 4자리" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500" />
+        <button id="delete-reservation-btn" class="w-full px-4 py-2.5 rounded-xl font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 transition text-sm">
           예약 취소(삭제)
         </button>
       </div>
@@ -181,31 +168,17 @@
   </div>
 
   <script>
-    // -------------------------------------------------------------
-    // Firebase 초기화 (Firebase 콘솔의 place 프로젝트 연결)
-    // -------------------------------------------------------------
-const firebaseConfig = {
-  apiKey: "AIzaSyC2IJuf-o9TjlToGimzjPTAlXMQ_gUuQ3U",
-  authDomain: "place-80b5e.firebaseapp.com",
-  projectId: "place-80b5e",
-  storageBucket: "place-80b5e.firebasestorage.app",
-  messagingSenderId: "1064681274530",
-  appId: "1:1064681274530:web:82abefd328f42635c9abfb",
-  measurementId: "G-NW88H18HCX"
-};
+    // Firebase 설정
+    const firebaseConfig = {
+      projectId: "place-ce86a",
+      // Firestore는 projectId만으로도 클라이언트 연동이 작동합니다.
+    };
 
-    // Firebase가 정상 초기화되지 않은 경우 대비
-    let db = null;
-    try {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-      }
-      db = firebase.firestore();
-    } catch (e) {
-      console.warn("Firebase 연결 대기 또는 로컬 모드:", e);
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
     }
+    const db = firebase.firestore();
 
-    // 15개 공간 목록
     const ROOMS = [
       { id: 'room_01', name: '본당 대예배실', shortName: '본당', location: '본관 2-3층', capacity: '500명' },
       { id: 'room_02', name: '비전홀 (소예배실)', shortName: '비전홀', location: '본관 B1층', capacity: '150명' },
@@ -230,9 +203,9 @@ const firebaseConfig = {
     let currentDate = new Date().toISOString().split('T')[0];
     let selectedSlot = null;
     let selectedReservation = null;
-    let reservationsList = [];
+    let reservations = [];
 
-    // DOM 요소
+    // DOM
     const dateInput = document.getElementById('current-date-input');
     const prevDateBtn = document.getElementById('prev-date-btn');
     const nextDateBtn = document.getElementById('next-date-btn');
@@ -241,11 +214,10 @@ const firebaseConfig = {
     const timeHeaderRow = document.getElementById('time-header-row');
 
     const bookingModal = document.getElementById('booking-modal');
-    const modalContent = document.getElementById('modal-content');
     const closeModalBtn = document.getElementById('close-modal-btn');
     const cancelBookingBtn = document.getElementById('cancel-booking-btn');
     const bookingForm = document.getElementById('booking-form');
-    const submitBookingBtn = document.getElementById('submit-booking-btn');
+    const submitBtn = document.getElementById('submit-btn');
 
     const detailModal = document.getElementById('detail-modal');
     const closeDetailBtn = document.getElementById('close-detail-btn');
@@ -253,22 +225,7 @@ const firebaseConfig = {
     const deletePasswordInput = document.getElementById('delete-password');
     const deleteReservationBtn = document.getElementById('delete-reservation-btn');
 
-    // Firestore 실시간 리스너 구독
-    const subscribeReservations = () => {
-      if (db) {
-        db.collection("reservations").onSnapshot((snapshot) => {
-          reservationsList = [];
-          snapshot.forEach((doc) => {
-            reservationsList.push({ id: doc.id, ...doc.data() });
-          });
-          renderSchedule();
-        }, (error) => {
-          console.error("실시간 구독 오류:", error);
-        });
-      }
-    };
-
-    // 타임라인 헤더 렌더링
+    // 시간 헤더
     const renderHeader = () => {
       let headersHtml = '<div class="flex">';
       for (let h = START_HOUR; h < END_HOUR; h++) {
@@ -282,7 +239,7 @@ const firebaseConfig = {
       timeHeaderRow.innerHTML = headersHtml;
     };
 
-    // 타임라인 테이블 렌더링
+    // 시간표 렌더링
     const renderSchedule = () => {
       dateInput.value = currentDate;
       scheduleBody.innerHTML = '';
@@ -311,12 +268,12 @@ const firebaseConfig = {
         `;
 
         for (let h = START_HOUR; h < END_HOUR; h++) {
-          const res = reservationsList.find(r => r.date === currentDate && r.roomId === room.id && Number(r.hour) === Number(h));
+          const res = reservations.find(r => r.date === currentDate && r.roomId === room.id && Number(r.hour) === h);
 
           if (res) {
             rowHtml += `
               <div class="w-20 md:w-24 h-14 md:h-16 flex-shrink-0 p-1 border-r border-slate-100">
-                <button onclick="openDetailModal('${res.id}')" class="w-full h-full bg-indigo-50/90 border border-indigo-200 rounded-lg md:rounded-xl p-1 md:p-1.5 flex flex-col justify-between text-left hover:bg-indigo-100 hover:border-indigo-300 transition shadow-xs">
+                <button onclick="openDetailModal('${res.id}')" class="w-full h-full bg-indigo-50 border border-indigo-200 rounded-lg md:rounded-xl p-1 md:p-1.5 flex flex-col justify-between text-left hover:bg-indigo-100 hover:border-indigo-300 transition shadow-xs">
                   <span class="text-[10px] md:text-[11px] font-bold text-indigo-950 truncate leading-tight">${res.groupName}</span>
                   <span class="text-[9px] md:text-[10px] font-medium text-indigo-600 truncate">${res.applicantName}</span>
                 </button>
@@ -342,6 +299,17 @@ const firebaseConfig = {
       });
     };
 
+    // 실시간 Firestore 구독
+    db.collection('reservations').onSnapshot((snapshot) => {
+      reservations = [];
+      snapshot.forEach(doc => {
+        reservations.push({ id: doc.id, ...doc.data() });
+      });
+      renderSchedule();
+    }, (error) => {
+      console.error("실시간 동기화 오류:", error);
+    });
+
     // 모달 제어
     window.openBookingModal = (roomId, roomName, hour) => {
       selectedSlot = { roomId, hour, date: currentDate };
@@ -350,34 +318,30 @@ const firebaseConfig = {
       document.getElementById('modal-time-text').textContent = `${String(hour).padStart(2, '0')}:00 ~ ${String(hour + 1).padStart(2, '0')}:00`;
 
       bookingForm.reset();
+      submitBtn.disabled = false;
+      submitBtn.textContent = '신청 등록';
       bookingModal.classList.remove('hidden');
-      setTimeout(() => {
-        modalContent.classList.remove('scale-95', 'opacity-0');
-      }, 10);
     };
 
     const closeBookingModal = () => {
-      modalContent.classList.add('scale-95', 'opacity-0');
-      setTimeout(() => {
-        bookingModal.classList.add('hidden');
-        selectedSlot = null;
-      }, 200);
+      bookingModal.classList.add('hidden');
+      selectedSlot = null;
     };
 
     window.openDetailModal = (resId) => {
-      const res = reservationsList.find(r => r.id === resId);
-      if (!res) return;
-      selectedReservation = res;
-      const room = ROOMS.find(r => r.id === res.roomId);
+      selectedReservation = reservations.find(r => r.id === resId);
+      if (!selectedReservation) return;
 
+      const room = ROOMS.find(r => r.id === selectedReservation.roomId);
       deletePasswordInput.value = '';
+
       detailContent.innerHTML = `
         <div class="p-3.5 bg-slate-50 rounded-xl space-y-1.5 text-xs">
-          <div><span class="font-semibold text-slate-500">장소:</span> <span class="font-bold text-slate-800">${room?.name}</span></div>
-          <div><span class="font-semibold text-slate-500">일시:</span> ${res.date} (${String(res.hour).padStart(2, '0')}:00 ~ ${String(Number(res.hour) + 1).padStart(2, '0')}:00)</div>
-          <div><span class="font-semibold text-slate-500">소속:</span> ${res.groupName}</div>
-          <div><span class="font-semibold text-slate-500">신청자:</span> ${res.applicantName}</div>
-          ${res.contact ? `<div><span class="font-semibold text-slate-500">비고:</span> ${res.contact}</div>` : ''}
+          <div><span class="font-semibold text-slate-500">장소:</span> <span class="font-bold text-slate-800">${room ? room.name : ''}</span></div>
+          <div><span class="font-semibold text-slate-500">일시:</span> ${selectedReservation.date} (${String(selectedReservation.hour).padStart(2, '0')}:00 ~ ${String(Number(selectedReservation.hour) + 1).padStart(2, '0')}:00)</div>
+          <div><span class="font-semibold text-slate-500">소속:</span> ${selectedReservation.groupName}</div>
+          <div><span class="font-semibold text-slate-500">신청자:</span> ${selectedReservation.applicantName}</div>
+          ${selectedReservation.contact ? `<div><span class="font-semibold text-slate-500">비고:</span> ${selectedReservation.contact}</div>` : ''}
         </div>
       `;
       detailModal.classList.remove('hidden');
@@ -386,10 +350,9 @@ const firebaseConfig = {
     const closeDetailModal = () => {
       detailModal.classList.add('hidden');
       selectedReservation = null;
-      deletePasswordInput.value = '';
     };
 
-    // 이벤트 리스너
+    // 날짜 변경 이벤트
     dateInput.addEventListener('change', (e) => {
       currentDate = e.target.value;
       renderSchedule();
@@ -418,93 +381,67 @@ const firebaseConfig = {
     cancelBookingBtn.addEventListener('click', closeBookingModal);
     closeDetailBtn.addEventListener('click', closeDetailModal);
 
-    // 예약 등록 (비밀번호 저장 포함)
+    // 예약 신청
     bookingForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!selectedSlot) return;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 저장 중...';
 
       const groupName = document.getElementById('group-name').value.trim();
       const applicantName = document.getElementById('applicant-name').value.trim();
       const password = document.getElementById('password').value.trim();
       const contact = document.getElementById('contact-info').value.trim();
 
-      if (!password) {
-        alert('취소 시 사용할 비밀번호를 입력해 주세요.');
-        return;
-      }
-
-      submitBookingBtn.disabled = true;
-      submitBookingBtn.textContent = '저장 중...';
-
-      const newReservation = {
-        date: selectedSlot.date,
-        roomId: selectedSlot.roomId,
-        hour: Number(selectedSlot.hour),
-        groupName,
-        applicantName,
-        password, // 비밀번호 필드 저장
-        contact,
-        createdAt: new Date()
-      };
-
       try {
-        if (db) {
-          await db.collection("reservations").add(newReservation);
-        } else {
-          // 로컬 폴백
-          newReservation.id = 'res_' + Date.now();
-          reservationsList.push(newReservation);
-          renderSchedule();
-        }
+        await db.collection('reservations').add({
+          date: selectedSlot.date,
+          roomId: selectedSlot.roomId,
+          hour: Number(selectedSlot.hour),
+          groupName,
+          applicantName,
+          password,
+          contact,
+          createdAt: new Date().toISOString()
+        });
+
         closeBookingModal();
       } catch (err) {
-        console.error("예약 오류:", err);
-        alert("예약 등록 중 오류가 발생했습니다: " + err.message);
-      } finally {
-        submitBookingBtn.disabled = false;
-        submitBookingBtn.textContent = '신청 등록';
+        alert('예약 저장 중 오류가 발생했습니다: ' + err.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = '신청 등록';
       }
     });
 
-    // 예약 취소 (비밀번호 검증)
+    // 예약 삭제
     deleteReservationBtn.addEventListener('click', async () => {
       if (!selectedReservation) return;
 
-      const enteredPassword = deletePasswordInput.value.trim();
-      if (!enteredPassword) {
-        alert('신청 시 등록한 비밀번호를 입력해 주세요.');
-        deletePasswordInput.focus();
+      const inputPwd = deletePasswordInput.value.trim();
+      if (!inputPwd) {
+        alert('비밀번호를 입력해 주세요.');
         return;
       }
 
-      // 비밀번호 일치 확인 (단, 관리자 마스터 비밀번호 "0000"도 허용 가능하도록 구성)
-      if (selectedReservation.password && selectedReservation.password !== enteredPassword && enteredPassword !== "0000") {
-        alert('비밀번호가 일치하지 않습니다. 신청 시 입력한 비밀번호를 다시 확인해 주세요.');
-        deletePasswordInput.focus();
+      if (selectedReservation.password && selectedReservation.password !== inputPwd) {
+        alert('비밀번호가 일치하지 않습니다.');
         return;
       }
 
-      if (confirm('정말로 이 사역장소 신청을 취소(삭제)하시겠습니까?')) {
+      if (confirm('이 사역장소 신청을 취소하시겠습니까?')) {
         try {
-          if (db) {
-            await db.collection("reservations").doc(selectedReservation.id).delete();
-          } else {
-            reservationsList = reservationsList.filter(r => r.id !== selectedReservation.id);
-            renderSchedule();
-          }
+          await db.collection('reservations').doc(selectedReservation.id).delete();
           closeDetailModal();
-          alert('예약이 성공적으로 취소되었습니다.');
         } catch (err) {
-          console.error("취소 오류:", err);
-          alert("취소 처리 중 오류가 발생했습니다: " + err.message);
+          alert('취소 처리 중 오류가 발생했습니다: ' + err.message);
         }
       }
     });
 
-    // 시작
+    // 초기화 실행
     renderHeader();
     renderSchedule();
-    subscribeReservations();
   </script>
 </body>
 </html>
