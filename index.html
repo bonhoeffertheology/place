@@ -56,7 +56,7 @@
       </div>
     </header>
 
-    <!-- 범례 및 안내 -->
+    <!-- 범례 및 로딩 상태 -->
     <div class="flex items-center justify-between mb-3 flex-wrap gap-2 text-[11px] md:text-xs font-medium text-slate-600">
       <div class="flex items-center gap-3 md:gap-4">
         <span class="flex items-center gap-1.5">
@@ -66,8 +66,11 @@
           <span class="w-3 h-3 rounded bg-indigo-500 border border-indigo-600"></span> 예약 완료
         </span>
       </div>
-      <div class="text-slate-400">
-        * 1시간 단위 (07:00 ~ 22:00) / 총 15개 공간
+      <div class="flex items-center gap-2 text-slate-400">
+        <span id="sync-status" class="inline-flex items-center gap-1 text-emerald-600 font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 실시간 동기화 중
+        </span>
+        <span>| 07:00 ~ 22:00</span>
       </div>
     </div>
 
@@ -77,7 +80,6 @@
         <table class="w-full border-collapse text-left">
           <thead>
             <tr class="bg-slate-100/90 border-b border-slate-200 text-xs font-semibold text-slate-600">
-              <!-- 모바일: 120px(w-[120px]), 데스크톱: 280px(md:w-72) -->
               <th class="p-2.5 md:p-3.5 w-[120px] md:w-72 min-w-[120px] md:min-w-[280px] sticky left-0 bg-slate-100 z-10 border-r border-slate-200 text-center md:text-left">
                 공간 목록
               </th>
@@ -85,7 +87,7 @@
             </tr>
           </thead>
           <tbody id="schedule-body" class="divide-y divide-slate-100 text-sm">
-            <!-- 자바스크립트로 15개 공간 렌더링 -->
+            <!-- 15개 공간 렌더링 -->
           </tbody>
         </table>
       </div>
@@ -130,7 +132,9 @@
 
         <div class="flex gap-2 pt-2">
           <button type="button" id="cancel-booking-btn" class="flex-1 px-4 py-2.5 rounded-xl font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition">취소</button>
-          <button type="submit" class="flex-1 px-4 py-2.5 rounded-xl font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition shadow-sm">신청 완료</button>
+          <button type="submit" id="submit-booking-btn" class="flex-1 px-4 py-2.5 rounded-xl font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition shadow-sm flex items-center justify-center gap-1.5">
+            <span>신청 완료</span>
+          </button>
         </div>
       </form>
     </div>
@@ -146,7 +150,7 @@
         </button>
       </div>
       <div id="detail-content" class="space-y-2 text-sm text-slate-600">
-        <!-- 자바스크립트 주입 -->
+        <!-- 내용 주입 -->
       </div>
       <div class="flex gap-2 pt-2">
         <button id="delete-reservation-btn" class="w-full px-4 py-2.5 rounded-xl font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 transition">
@@ -156,8 +160,27 @@
     </div>
   </div>
 
-  <script>
-    // 1. 15개 공간 목록
+  <!-- Firebase v10 SDK 연동 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+    // 전달해주신 Firebase 설정 정보 적용
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2IJuF-o9TjlToGimzjPTALXMQ_gUuQ3U",
+      authDomain: "place-80b5e.firebaseapp.com",
+      projectId: "place-80b5e",
+      storageBucket: "place-80b5e.firebasestorage.app",
+      messagingSenderId: "1064681274530",
+      appId: "1:1064681274530:web:82abefd328f42635c9abfb",
+      measurementId: "G-NW88H18HCX"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const reservationsCol = collection(db, "reservations");
+
+    // 공간 15개 정의
     const ROOMS = [
       { id: 'room_01', name: '본당 대예배실', shortName: '본당', location: '본관 2-3층', capacity: '500명' },
       { id: 'room_02', name: '비전홀 (소예배실)', shortName: '비전홀', location: '본관 B1층', capacity: '150명' },
@@ -180,19 +203,11 @@
     const END_HOUR = 22;
 
     let currentDate = new Date().toISOString().split('T')[0];
+    let currentReservations = [];
     let selectedSlot = null;
     let selectedReservationId = null;
 
-    const getReservations = () => {
-      const data = localStorage.getItem('seogyo_church_reservations');
-      return data ? JSON.parse(data) : [];
-    };
-
-    const saveReservations = (list) => {
-      localStorage.setItem('seogyo_church_reservations', JSON.stringify(list));
-    };
-
-    // 2. DOM 요소
+    // DOM 요소
     const dateInput = document.getElementById('current-date-input');
     const prevDateBtn = document.getElementById('prev-date-btn');
     const nextDateBtn = document.getElementById('next-date-btn');
@@ -205,13 +220,14 @@
     const closeModalBtn = document.getElementById('close-modal-btn');
     const cancelBookingBtn = document.getElementById('cancel-booking-btn');
     const bookingForm = document.getElementById('booking-form');
+    const submitBtn = document.getElementById('submit-booking-btn');
 
     const detailModal = document.getElementById('detail-modal');
     const closeDetailBtn = document.getElementById('close-detail-btn');
     const detailContent = document.getElementById('detail-content');
     const deleteReservationBtn = document.getElementById('delete-reservation-btn');
 
-    // 3. 렌더링
+    // 시간표 헤더 렌더링
     const renderHeader = () => {
       let headersHtml = '<div class="flex">';
       for (let h = START_HOUR; h < END_HOUR; h++) {
@@ -225,8 +241,8 @@
       timeHeaderRow.innerHTML = headersHtml;
     };
 
+    // 타임테이블 렌더링
     const renderSchedule = () => {
-      const reservations = getReservations();
       dateInput.value = currentDate;
       scheduleBody.innerHTML = '';
 
@@ -234,7 +250,6 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50/60 transition';
 
-        // 반응형 공간 컬럼: 모바일은 간결하게, PC는 넓고 상세하게
         let rowHtml = `
           <td class="p-2 md:p-3.5 sticky left-0 bg-white z-10 border-r border-slate-200 shadow-[2px_0_6px_rgba(0,0,0,0.02)] w-[120px] md:w-72">
             <div class="font-bold text-slate-800 text-[12px] md:text-[13px] truncate" title="${room.name}">
@@ -254,14 +269,13 @@
             <div class="flex">
         `;
 
-        // 시간별 슬롯
         for (let h = START_HOUR; h < END_HOUR; h++) {
-          const res = reservations.find(r => r.date === currentDate && r.roomId === room.id && r.hour === h);
+          const res = currentReservations.find(r => r.date === currentDate && r.roomId === room.id && Number(r.hour) === h);
 
           if (res) {
             rowHtml += `
               <div class="w-20 md:w-24 h-14 md:h-16 flex-shrink-0 p-1 border-r border-slate-100">
-                <button onclick="openDetailModal('${res.id}')" class="w-full h-full bg-indigo-50/90 border border-indigo-200 rounded-lg md:rounded-xl p-1 md:p-1.5 flex flex-col justify-between text-left hover:bg-indigo-100 hover:border-indigo-300 transition shadow-xs">
+                <button onclick="window.openDetailModal('${res.id}')" class="w-full h-full bg-indigo-50/90 border border-indigo-200 rounded-lg md:rounded-xl p-1 md:p-1.5 flex flex-col justify-between text-left hover:bg-indigo-100 hover:border-indigo-300 transition shadow-xs">
                   <span class="text-[10px] md:text-[11px] font-bold text-indigo-950 truncate leading-tight">${res.groupName}</span>
                   <span class="text-[9px] md:text-[10px] font-medium text-indigo-600 truncate">${res.applicantName}</span>
                 </button>
@@ -270,7 +284,7 @@
           } else {
             rowHtml += `
               <div class="w-20 md:w-24 h-14 md:h-16 flex-shrink-0 p-1 border-r border-slate-100">
-                <button onclick="openBookingModal('${room.id}', '${room.name}', ${h})" class="w-full h-full border border-dashed border-slate-200 rounded-lg md:rounded-xl flex items-center justify-center text-slate-300 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50/40 transition group">
+                <button onclick="window.openBookingModal('${room.id}', '${room.name}', ${h})" class="w-full h-full border border-dashed border-slate-200 rounded-lg md:rounded-xl flex items-center justify-center text-slate-300 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50/40 transition group">
                   <i class="fa-solid fa-plus text-[10px] md:text-xs group-hover:scale-125 transition-transform"></i>
                 </button>
               </div>
@@ -287,7 +301,7 @@
       });
     };
 
-    // 4. 모달 인터랙션
+    // 모달 제어 함수를 window에 등록
     window.openBookingModal = (roomId, roomName, hour) => {
       selectedSlot = { roomId, hour, date: currentDate };
       document.getElementById('modal-date-text').textContent = currentDate;
@@ -310,15 +324,15 @@
     };
 
     window.openDetailModal = (resId) => {
-      const res = getReservations().find(r => r.id === resId);
+      const res = currentReservations.find(r => r.id === resId);
       if (!res) return;
       selectedReservationId = resId;
       const room = ROOMS.find(r => r.id === res.roomId);
 
       detailContent.innerHTML = `
-        <div class="p-3 bg-slate-50 rounded-xl space-y-1.5 text-xs">
-          <div><span class="font-semibold text-slate-500">장소:</span> <span class="font-bold text-slate-800">${room?.name}</span></div>
-          <div><span class="font-semibold text-slate-500">일시:</span> ${res.date} (${String(res.hour).padStart(2, '0')}:00 ~ ${String(res.hour + 1).padStart(2, '0')}:00)</div>
+        <div class="p-3.5 bg-slate-50 rounded-xl space-y-1.5 text-xs">
+          <div><span class="font-semibold text-slate-500">장소:</span> <span class="font-bold text-slate-800">${room?.name || res.roomId}</span></div>
+          <div><span class="font-semibold text-slate-500">일시:</span> ${res.date} (${String(res.hour).padStart(2, '0')}:00 ~ ${String(Number(res.hour) + 1).padStart(2, '0')}:00)</div>
           <div><span class="font-semibold text-slate-500">소속:</span> ${res.groupName}</div>
           <div><span class="font-semibold text-slate-500">신청자:</span> ${res.applicantName}</div>
           ${res.contact ? `<div><span class="font-semibold text-slate-500">비고:</span> ${res.contact}</div>` : ''}
@@ -332,7 +346,16 @@
       selectedReservationId = null;
     };
 
-    // 5. 이벤트 핸들러
+    // Firebase 실시간 리스너 (모든 기기 실시간 동기화)
+    onSnapshot(reservationsCol, (snapshot) => {
+      currentReservations = snapshot.docs.map(docSnap => ({
+        id: docSnap.id,
+        ...docSnap.data()
+      }));
+      renderSchedule();
+    });
+
+    // 이벤트 리스너
     dateInput.addEventListener('change', (e) => {
       currentDate = e.target.value;
       renderSchedule();
@@ -361,44 +384,52 @@
     cancelBookingBtn.addEventListener('click', closeBookingModal);
     closeDetailBtn.addEventListener('click', closeDetailModal);
 
-    bookingForm.addEventListener('submit', (e) => {
+    // 예약 추가 (Firestore 클라우드 저장)
+    bookingForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!selectedSlot) return;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> 저장 중...';
 
       const groupName = document.getElementById('group-name').value.trim();
       const applicantName = document.getElementById('applicant-name').value.trim();
       const contact = document.getElementById('contact-info').value.trim();
 
-      const newReservation = {
-        id: 'res_' + Date.now(),
-        date: selectedSlot.date,
-        roomId: selectedSlot.roomId,
-        hour: selectedSlot.hour,
-        groupName,
-        applicantName,
-        contact
-      };
+      try {
+        await addDoc(reservationsCol, {
+          date: selectedSlot.date,
+          roomId: selectedSlot.roomId,
+          hour: Number(selectedSlot.hour),
+          groupName,
+          applicantName,
+          contact,
+          createdAt: new Date().toISOString()
+        });
 
-      const reservations = getReservations();
-      reservations.push(newReservation);
-      saveReservations(reservations);
-
-      closeBookingModal();
-      renderSchedule();
-    });
-
-    deleteReservationBtn.addEventListener('click', () => {
-      if (!selectedReservationId) return;
-      if (confirm('이 사역장소 신청을 취소하시겠습니까?')) {
-        let reservations = getReservations();
-        reservations = reservations.filter(r => r.id !== selectedReservationId);
-        saveReservations(reservations);
-        closeDetailModal();
-        renderSchedule();
+        closeBookingModal();
+      } catch (error) {
+        alert("예약 등록 중 오류가 발생했습니다: " + error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>신청 완료</span>';
       }
     });
 
-    // 실행
+    // 예약 삭제 (Firestore 클라우드 삭제)
+    deleteReservationBtn.addEventListener('click', async () => {
+      if (!selectedReservationId) return;
+      if (confirm('이 사역장소 신청을 취소하시겠습니까?')) {
+        try {
+          await deleteDoc(doc(db, "reservations", selectedReservationId));
+          closeDetailModal();
+        } catch (error) {
+          alert("예약 취소 중 오류가 발생했습니다: " + error.message);
+        }
+      }
+    });
+
+    // 초기 렌더링
     renderHeader();
     renderSchedule();
   </script>
